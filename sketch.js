@@ -1,785 +1,750 @@
-inputNum  = 2;
-outputNum = 2;
-wires = [];
-circuitry = [];
 
 function setup(){
-    
     createCanvas(windowWidth,windowHeight);
     noStroke();
     
+    simWidth = width-300;
+        
+    chipColors = [color(255,173,47),
+                  color(255,47,154),
+                  color(48,129,238),
+                  color(110,193,248)];
+    
+    ioController = new IOSizeController();
+    addChipController = new ChipController();
+    
+    inputNum = 2;
+    outputNum = 2;
+    inputSwitches = [];
+    outputSwitches = [];
+    
+    wires = [];
+    circuitry = [];
+        
+    for(i=0;i<inputNum;i++)
+        inputSwitches[i] = new Switch((i+1)/(inputNum+1));
+    
+    for(i=0;i<outputNum;i++)
+        outputSwitches[i] = new Light((i+1)/(outputNum+1));
+    
+    wireToAdd = null;
+    chipToAdd = null;
     cursorMode = 0;
-    lastPressed = 0;
-    
-    creatingWire = null;
-    creatingChip = null;
-    
-    inputs = [];
-    for(i=0;i<inputNum;i++){
-        
-        inputs.push(new Button((i+1)/(inputNum+1)));
-    }
-    
-    outputs = [];
-    for(i=0;i<outputNum;i++){
-        
-        outputs.push(new Light((i+1)/(outputNum+1)));
-    }
-    
-    t = new Table();
-    t.cells.push(new Chip("and"));
-    t.cells.push(new Chip("or"));
-    t.cells.push(new Chip("not",1,1));
-    
 }
 
 function draw(){
-    background(230, 230, 220);
-    
-    t.show();
-    
-    if(random()<0.001){
-        wires.sort(()=>{return random < 0.5});
-    }
-    for(i=0;i<wires.length*3;i++){
-        wires[i%wires.length].update();
-    }
-    
-    for(i=0;i<circuitry.length;i++){
+    background(50);
         
-        circuitry[i].update();
-        circuitry[i].draw();
+    for(i=0;i<circuitry.length;i++)
+        circuitry[i].show();
+    
+    for(i=0;i<wires.length;i++)
+        wires[i].show();
+    
+    if(wireToAdd != null)
+        wireToAdd.show();
+    
+    for(i=0;i<inputSwitches.length;i++)
+        inputSwitches[i].show();
+    
+    for(i=0;i<outputSwitches.length;i++)
+        outputSwitches[i].show();
+    
+    ioController.show();
+    addChipController.show();
+    
+    
+    
+    if(chipToAdd != null){
+        chipToAdd.x = mouseX;
+        chipToAdd.y = mouseY;
+        chipToAdd.draw();
     }
     
-    for(i=0;i<wires.length;i++){
-        wires[i].draw();
-    }
-    
-    if(creatingWire){
-        creatingWire.draw();
-    }
-    if(creatingChip){
-        
-        creatingChip.showWhileCreating();
-        
-        if(mouseIsPressed && frameCount - lastPressed > 20){
-            circuitry.push(creatingChip);
-            creatingChip = null;
-            cursorMode = 0;
-            lastPressed = frameCount;
-        }
-    }
-    
-    for(i=0;i<inputs.length;i++)
-        inputs[i].show();
-    
-    for(i=0;i<outputs.length;i++)
-        outputs[i].show();
-    
-    
-    if(cursorMode == 1 && !creatingWire){
-        
-        stroke(0);
-        strokeWeight(4);
+    if(cursorMode == 1 && wireToAdd == null){
         fill(0,0);
+        stroke(200,100);
+        strokeWeight(8);
+        ellipse(mouseX,mouseY,30);
+        strokeWeight(3);
+        stroke(0);
         ellipse(mouseX,mouseY,30);
         noStroke();
     }
-    
-    
-    if(inputNum != inputs.length){
+    else if(cursorMode == 2 && mouseIsPressed
+            && frameCount-addChipController.lastPressed > 30){
         
-        inputs = [];
-        for(i=0;i<inputNum;i++){
-            
-            inputs.push(new Button((i+1)/(inputNum+1)));
-        }
-        outputs = [];
-        for(i=0;i<outputNum;i++){
-            
-            outputs.push(new Light((i+1)/(outputNum+1)));
-        }
-        
-        wires = [];
-        circuitry = [];
-    }
-    if(outputNum != outputs.length){
-        
-        inputs = [];
-        for(i=0;i<inputNum;i++){
-            
-            inputs.push(new Button((i+1)/(inputNum+1)));
-        }
-        outputs = [];
-        for(i=0;i<outputNum;i++){
-            
-            outputs.push(new Light((i+1)/(outputNum+1)));
-        }
-        
-        wires = [];
-        circuitry = [];
+        circuitry.push(chipToAdd);
+        chipToAdd = null;
+        cursorMode = 0;
+        addChipController.lastPressed = frameCount;
     }
     
+    if(inputNum != inputSwitches.length || outputNum != outputSwitches.length){
+        
+        inputSwitches = [];
+        outputSwitches = [];
+        
+        if(wires.length!=0){
+            wires = [];
+            circuitry = [];
+        }
+        
+        for(i=0;i<inputNum;i++)
+            inputSwitches[i] = new Switch((i+1)/(inputNum+1));
+        
+        for(i=0;i<outputNum;i++)
+            outputSwitches[i] = new Light((i+1)/(outputNum+1));
+    }
 }
-
-///////////////////////////////////////////////////////////////////////////////////////
 
 function keyPressed(){
-    if(key == "Escape"){
+    
+    if(key=="Escape"){
+        
         cursorMode = 0;
-        creatingWire = null;
-        creatingChip = null;
+        wireToAdd = null;
+        chipToAdd = null;
     }
-    else if(key == "1"){
+    else if(key=="1"){
         
+        chipToAdd = null;
         cursorMode = 1;
-        creatingWire = null;
-        creatingChip = null;
-    }
-    else if(key == "2"){
-        
-        if(cursorMode != 2){
-            
-            creatingWire = null;
-            creatingChip = null;
-            
-            cursorMode = 2;
-            creatingChip = new Chip("and");
-        }
-    }
-    else if(key == "3"){
-        
-        if(cursorMode != 3){
-            
-            creatingWire = null;
-            creatingChip = null;
-            
-            cursorMode = 3;
-            creatingChip = new Chip("or");
-        }
-    }
-    else if(key == "4"){
-        
-        if(cursorMode != 4){
-            
-            creatingWire = null;
-            creatingChip = null;
-            
-            cursorMode = 4;
-            creatingChip = new Chip("not",1,1);
-        }
     }
     
+//    console.log(key);
 }
 
-
-///////////////////////////////////////////////////////////////////////////////////////
-
-function Table(){
+function Register(){
+    
+    this.mode = "register";
+    
+    this.memSize = 4;
+    
+    this.memory = Array(this.memSize).fill(0);
+    this.inputs = [];
+    this.outputs = [];
+    
+    for(mem=0;mem<this.memSize+2;mem++)
+        this.inputs[mem] = new Pin(0);
+    for(mem=0;mem<this.memSize;mem++)
+        this.outputs[mem] = new Pin(1);
     
     
-    padA = 100;
-    padB = 25;
-    this.x = width - 360 + padA/2;
-    this.y = padA/2;
-    this.w = 400-padA;
-    this.h = height-padA;
+    this.x = simWidth/2;
+    this.y = height/2;
+    this.w = (this.memSize+2)*16;
+    this.h = this.w;
     
-    this.g = createGraphics(400-padA-padB, height-padA-padB);
-    this.g.noStroke();
-    
-    this.cells = [];
+    this.draw = function(){
+        this.show();
+    }
+    this.update = function(){
+    }
     
     this.show = function(){
         
-        fill(23);
-        rect(this.x,this.y,this.w,this.h, 15);
+        fill(0);
+        rect(this.x-this.w/2,this.y-this.h/2,this.w,this.h);
         
-        stroke(23);
-        strokeWeight(10);
-        fill(255,0,0);
-        rect(this.x,this.y+this.h,this.w*1/4,height-(this.y+this.h)-10,10);
-        fill(0,255,0);
-        rect(this.x+this.w*1/4,this.y+this.h,this.w*1/4,height-(this.y+this.h)-10,10);
-        fill(255,0,0);
-        rect(this.x+this.w*2/4,this.y+this.h,this.w*1/4,height-(this.y+this.h)-10,10);
-        fill(0,255,0);
-        rect(this.x+this.w*3/4,this.y+this.h,this.w*1/4,height-(this.y+this.h)-10,10);
-        noStroke();
+        sum = 0;
         
-        fill(23);
+        for(p=0;p<this.memSize;p++){
+            
+            if(this.memory[p])
+                sum += pow(2,p);
+            
+        }
+        
+        fill(255,0,0);
+        textSize(90);
+        if(sum>=10)
+        textSize(70);
         textAlign(CENTER,CENTER);
-        textSize(25);
-        text("v",this.x + this.w/8, (this.y+this.h+height-8)/2);
-        text("v",this.x + this.w*5/8, (this.y+this.h+height-8)/2);
-        textSize(30);
-        text("^",this.x + this.w*3/8, (this.y+this.h+height)/2);
-        text("^",this.x + this.w*7/8, (this.y+this.h+height)/2);
+        text(sum,this.x,this.y);
         
-        if(mouseIsPressed && frameCount-lastPressed > 10 && mouseX >= this.x && mouseX < this.x+this.w/4 && mouseY > this.y+this.h){
-            inputNum--;
-            if(inputNum < 1)
-                inputNum = 1;
-            lastPressed = frameCount;
-        }
-        if(mouseIsPressed && frameCount-lastPressed > 10 &&
-           mouseX >= this.x+this.w*1/4 && mouseX < this.x+this.w*1/4+this.w/4 && mouseY > this.y+this.h){
+        h = this.h/(this.memSize+2);
+        
+        for(p=0;p<this.memSize+2;p++){
             
-            inputNum++;
-            if(inputNum > 8)
-                inputNum = 8;
-            lastPressed = frameCount;
+            this.inputs[p].update(this.x-this.w/2-h/2,this.y-this.h/2+h/2+h*p,h,h);
+            this.inputs[p].draw(this.x-this.w/2-h/2,this.y-this.h/2+h/2+h*p,h,h);
         }
-        if(mouseIsPressed && frameCount-lastPressed > 10 && mouseX >= this.x+this.w*1/2 && mouseX < this.x+this.w*1/2+this.w/4 && mouseY > this.y+this.h){
+        
+        for(p=0;p<this.memSize;p++){
             
-            outputNum--;
-            if(outputNum < 1)
-                outputNum = 1;
-            lastPressed = frameCount;
+            this.outputs[p].update(this.x+this.w/2+h/2,this.y-this.h/2+h/2+h*p,h,h);
+            this.outputs[p].draw(this.x+this.w/2+h/2,this.y-this.h/2+h/2+h*p,h,h);
+            this.outputs[p].state = false;
         }
-        if(mouseIsPressed && frameCount-lastPressed > 10 &&
-           mouseX >= this.x+this.w*3/4 && mouseX < this.x+this.w*3/4+this.w/4 && mouseY > this.y+this.h){
+        
+        if(this.inputs[this.memSize+1].state){
             
-            outputNum++;
-            if(outputNum > 8)
-                outputNum = 8;
-            lastPressed = frameCount;
-        }
-        
-        this.drawG();
-    }
-    
-    this.drawG = function(){
-        
-        bs = this.g.width/2;
-        gsx = floor(this.g.width/bs);
-        
-        this.g.background(100);
-        
-        c = 0;
-        for(y=0;c<=this.cells.length;y++)
-            for(x=0;x<gsx;x++)
-                if(c < this.cells.length)
-                {
-                    pad = 4;
-                    this.g.fill(60);
-                    this.g.rect(x*bs+pad/2,y*bs+pad/2,bs-pad,bs-pad,10);
-                    
-                    this.cells[c].x = (x+0.5)*bs;
-                    this.cells[c].y = (y+0.5)*bs;
-                    
-                    this.cells[c].drawOnG(this.g);
-                    
-                    this.g.fill(255);
-                    this.g.textSize(16);
-                    this.g.textAlign(CENTER,CENTER);
-                    this.g.text(this.cells[c].logicMode,(x+0.5)*bs,y*bs+20);
-                    
-                    if(mouseIsPressed && frameCount-lastPressed > 30 &&
-                       mouseX >= this.x+padB/2+x*bs && mouseX <= this.x+padB/2+(x+1)*bs &&
-                       mouseY >= this.y+padB/2+y*bs && mouseY <= this.y+padB/2+(y+1)*bs){
-                        
-                        
-                        creatingWire = null;
-                        creatingChip = null;
-                        
-                        cursorMode = 2;
-                        creatingChip = Object.assign({}, this.cells[c]);
-                        
-                        
-                        //if custom chip
-                        if(creatingChip.wires){
-                            
-                            creatingChip.wires = [];
-                            for(p=0;p<this.cells[c].wires.length;p++)
-                                creatingChip.wires[p] = Object.assign({}, this.cells[c].wires[p]);
-                            
-                            creatingChip.circuitry = [];
-                            for(p=0;p<this.cells[c].circuitry.length;p++){
-                                
-                                creatingChip.circuitry[p] = Object.assign({}, this.cells[c].circuitry[p]);
-                                
-                                for(m=0;m<this.cells[c].circuitry[p].inputPins.length;m++){
-                                    
-                                    creatingChip.wires.forEach(wire => {
-                                        
-                                        if(wire.b == this.cells[c].circuitry[p].inputPins[m])
-                                            wire.b = creatingChip.circuitry[p].inputPins[m];
-                                    })
-                                }
-                                
-                                for(m=0;m<this.cells[c].circuitry[p].outputPins.length;m++){
-                                    
-                                    creatingChip.wires.forEach(wire => {
-                                        
-                                        if(wire.a == this.cells[c].circuitry[p].outputPins[m])
-                                            wire.a = creatingChip.circuitry[p].outputPins[m];
-                                    })
-                                }
-                                
-                            }
-                            
-                        }
-                        
-                        creatingChip.inputPins = [];
-                        for(p=0;p<this.cells[c].inputPins.length;p++){
-                            creatingChip.inputPins[p] = Object.assign({}, this.cells[c].inputPins[p]);
-                            
-                            if(creatingChip.wires)
-                                creatingChip.wires.forEach(wire => {
-                                    
-                                    if(wire.a == this.cells[c].inputPins[p])
-                                        wire.a = creatingChip.inputPins[p];
-                                })
-                                }
-                        creatingChip.outputPins = [];
-                        for(p=0;p<this.cells[c].outputPins.length;p++){
-                            creatingChip.outputPins[p] = Object.assign({}, this.cells[c].outputPins[p]);
-                            
-                            if(creatingChip.wires)
-                                creatingChip.wires.forEach(wire => {
-                                    
-                                    if(wire.b == this.cells[c].outputPins[p])
-                                        wire.b = creatingChip.outputPins[p];
-                                })
-                                }
-                        
-                        lastPressed = frameCount;
-                        if(c > 2)
-                        this.cells.splice(c,1);
-                    }
-                    
-                    c++;
-                }
-                else if(c == this.cells.length){
-                    pad = 4;
-                    this.g.fill(60);
-                    this.g.rect(x*bs+pad/2,y*bs+pad/2,bs-pad,bs-pad,10);
-                    
-                    this.g.fill(255);
-                    this.g.textSize(40);
-                    this.g.textAlign(CENTER,CENTER);
-                    this.g.text("+",(x+0.5)*bs,(y+0.5)*bs);
+            for(p=0;p<this.memSize;p++){
                 
-                    if(mouseIsPressed && frameCount-lastPressed > 30 &&
-                       mouseX >= this.x+padB/2+x*bs && mouseX <= this.x+padB/2+(x+1)*bs &&
-                       mouseY >= this.y+padB/2+y*bs && mouseY <= this.y+padB/2+(y+1)*bs){
-                        
-                        creatingWire = null;
-                        creatingChip = null;
-                        
-                        this.cells.push(Object.assign({}, new CustomChip()));
-                        
-                        this.cells[this.cells.length-1].logicMode += String.fromCharCode("A".charCodeAt(0)+this.cells.length-4);
-                        this.cells[this.cells.length-1].pinSize = (bs)/(max(inputNum,outputNum)+4);
-                        
-                        lastPressed = frameCount;
-                    }
-                    
-                    c++;
-                }
-        
-        image(this.g, this.x+padB/2, this.y+padB/2);
-        
-    }
-}
-
-function CustomChip(){
-    
-    this.logicMode = "Extra";
-    
-    this.x = width/2;
-    this.y = height/2;
-    this.s = 2;
-    
-    this.pinSize = 30;
-    
-    this.inputNum = inputNum;
-    this.outputNum = outputNum;
-    
-    this.inputPins = [];
-    this.outputPins = [];
-    
-    this.wires = wires;
-    this.circuitry = circuitry;
-    wires = [];
-    circuitry = [];
-    
-    for(p=0;p<this.inputNum;p++){
-        
-        this.inputPins[p] = new Pin(this.x,this.y,1,0);
-        this.wires.forEach(wire=>{
-            
-            if(wire.a == inputs[p]){
                 
-                wire.a = this.inputPins[p];
+                this.outputs[p].state = this.memory[p];
             }
-        });
-    }
-    
-    for(p=0;p<this.outputNum;p++){
-
-        this.outputPins[p] = new Pin(this.x,this.y,1,1);
-        this.wires.forEach(wire=>{
-
-            if(wire.b == outputs[p]){
+            
+            
+            
+        }
+        if(this.inputs[this.memSize].state){
+            
+            for(p=0;p<this.memSize;p++){
                 
-                outputs[p].connected = false;
-
-                wire.b = this.outputPins[p];
+                this.memory[p] = this.inputs[p].state;
             }
-        });
-    }
-    
-    this.update = function(){
-        
-        this.wires.forEach(wire=>{
             
-            wire.update();
-        });
-        
-        this.circuitry.forEach(chip=>{
             
-            chip.update();
-        });
-    }
-    
-    this.draw = function(){
-        
-        this.s = this.pinSize * max(this.inputNum,this.outputNum);
-        
-        sf = 0.5;
-        
-        translate(this.x-this.s/2,this.y-this.s/2);
-        scale(this.s/width,this.s/height);
-        this.circuitry.forEach(chip=>{
             
-            chip.draw();
-        });
-        scale(width/this.s,height/this.s);
-        translate(-this.x+this.s/2,-this.y+this.s/2);
+        }
         
-        fill(50);
-        rect(this.x-this.s/2,this.y-this.s/2,this.s,this.s);
-        
-        for(p=0;p<this.inputPins.length;p++)
-            this.inputPins[p].show(this.x-this.s/2,this.y-this.s/2+(p+0.5)*this.pinSize,this.pinSize);
-        for(p=0;p<this.outputPins.length;p++)
-            this.outputPins[p].show(this.x+this.s/2,this.y-this.s/2+(p+0.5)*this.pinSize,this.pinSize);
     }
     
-    this.showWhileCreating = function(){
-        
-        this.x = mouseX;
-        this.y = mouseY;
-        
-        this.draw();
-    }
-    
-    this.drawOnG = function(g){
-        
-        s = this.pinSize * max(this.inputNum,this.outputNum);
-        
-        
-        g.fill(50);
-        g.rect(this.x-s/2,this.y-s/2,s,s);
-        
-        
-        for(p=0;p<this.inputPins.length;p++)
-            this.inputPins[p].showOnG(g,this.x-s/2,this.y-s/2+(p+0.5)*this.pinSize,this.pinSize);
-        for(p=0;p<this.outputPins.length;p++)
-            this.outputPins[p].showOnG(g,this.x+s/2,this.y-s/2+(p+0.5)*this.pinSize,this.pinSize);
-    }
     
 }
 
 
-function Chip(lMode="and",iN=2,oN=1){
+
+function Chip(mode="and",iNum=2,oNum=1){
     
-    this.x = width/2;
+    this.iNum = iNum;
+    this.oNum = oNum;
+    this.mode = mode;
+    this.truthTable = [];
+    
+    this.inputs = [];
+    this.outputs = [];
+    
+    for(p=0;p<this.iNum;p++)
+        this.inputs[p] = new Pin(0);
+    for(p=0;p<this.oNum;p++)
+        this.outputs[p] = new Pin(1);
+    
+    this.x = simWidth/2;
     this.y = height/2;
+    this.w = 30;
+    this.h = min(max(this.iNum,this.oNum)*20,height/2);
     
-    this.pinSize = 30;
+    this.c = chipColors[floor(random(chipColors.length))];
     
-    this.logicMode = lMode;
-    
-    this.inputNum = iN;
-    this.outputNum = oN;
-    
-    this.inputPins = [];
-    this.outputPins = [];
-    
-    for(p=0;p<this.inputNum;p++)
-        this.inputPins.push(new Pin(this.x,this.y,1,0));
-    
-    for(p=0;p<this.outputNum;p++)
-        this.outputPins.push(new Pin(this.x,this.y,1,1));
-        
-    this.update = function(){
-        
-        
-        if(this.logicMode == "and"){
-            
-            output = true;
-            connected = false;
-            for(p=0;p<this.inputPins.length && output;p++){
-                if(!this.inputPins[p].state && this.inputPins[p].connected)
-                    output = false;
-                if(this.inputPins[p].connected)
-                    connected = true;
-            }
-            
-            output = output && connected;
-            
-            
-            for(p=0;p<this.outputPins.length;p++)
-                this.outputPins[p].state = output;
-        }
-        else if(this.logicMode == "or"){
-            
-            output = false;
-            for(p=0;p<this.inputPins.length && !output;p++)
-                if(this.inputPins[p].state)
-                    output = true;
-            
-            for(p=0;p<this.outputPins.length;p++)
-                this.outputPins[p].state = output;
-        }
-        else if(this.logicMode == "not" && this.inputPins.length == this.outputPins.length){
-            
-            for(p=0;p<this.inputPins.length;p++)
-                this.outputPins[p].state = !this.inputPins[p].state;
-        }
+    if(this.mode=="and"){
+        this.c = color(0,0,255);
+    }
+    else if(this.mode=="or"){
+        this.c = color(160,255,47);
+    }
+    else if(this.mode=="not"){
+        this.c = color(255,0,0);
     }
     
-    this.draw = function(){
-        
-        s = this.pinSize * max(this.inputNum,this.outputNum);
-        
-        if(this.logicMode=="and")
-            fill(0,0,255);
-        else if(this.logicMode=="or")
-            fill(1,150,32);
-        else if(this.logicMode=="not")
-            fill(255,0,0);
-        else
-            fill(0);
-        rect(this.x-s/2,this.y-s/2,s,s);
-        
-        
-        for(p=0;p<this.inputPins.length;p++)
-            this.inputPins[p].show(this.x-s/2,this.y-s/2+(p+0.5)*this.pinSize,this.pinSize);
-        for(p=0;p<this.outputPins.length;p++)
-            this.outputPins[p].show(this.x+s/2,this.y-s/2+(p+0.5)*this.pinSize,this.pinSize);
-    }
-    
-    this.showWhileCreating = function(){
-        
-        this.x = mouseX;
-        this.y = mouseY;
-        
+    this.show = function(){
         this.draw();
         this.update();
     }
     
-    this.drawOnG = function(g){
-        
-        s = this.pinSize * max(this.inputNum,this.outputNum);
-        
-        if(this.logicMode=="and")
-            g.fill(0,0,255);
-        else if(this.logicMode=="or")
-            g.fill(1,150,32);
-        else if(this.logicMode=="not")
-            g.fill(255,0,0);
-        else
-            g.fill(0);
-        g.rect(this.x-s/2,this.y-s/2,s,s);
-                
-        
-        for(p=0;p<this.inputPins.length;p++)
-            this.inputPins[p].showOnG(g,this.x-s/2,this.y-s/2+(p+0.5)*this.pinSize,this.pinSize);
-        for(p=0;p<this.outputPins.length;p++)
-            this.outputPins[p].showOnG(g,this.x+s/2,this.y-s/2+(p+0.5)*this.pinSize,this.pinSize);
-    }
-    
-}
-
-function Pin(x,y,s,ioMode){
-    
-    this.x = x;
-    this.y = y;
-    this.s = s;
-    
-    this.connected = false;
-    this.state = 0;
-    
-    this.ioMode = ioMode;
-    
-    this.show = function(x,y,s){
-        
-        this.x = x;
-        this.y = y;
-        this.s = s;
-        
-        fill(0);
-        ellipse(this.x,this.y,this.s);
-        fill(155);
-        if(this.state)
-            fill(255,255,0);
-        ellipse(this.x,this.y,this.s*0.8);
-        
-        if(this.ioMode == 0 && !this.connected && mouseIsPressed &&
-           frameCount-lastPressed > 10 && dist(mouseX,mouseY,this.x,this.y) < this.s/2 &&
-           cursorMode == 1 && creatingWire){
-            
-            this.connected = true;
-                
-            creatingWire.b = this;
-            
-            wires.push(creatingWire);
-            
-            creatingWire = null;
-            
-            lastPressed = frameCount;
-        }
-        else if(this.ioMode == 1 && cursorMode == 1 && !creatingWire &&
-                mouseIsPressed && frameCount-lastPressed > 10 &&
-                dist(mouseX,mouseY,this.x,this.y) < this.s/2){
-            
-            creatingWire = new Wire(this,null);
-            
-            lastPressed = frameCount;
-            this.connected = true;
-        }
-    }
-    
-    this.showOnG = function(g,x,y,s){
-        
-        this.x = x;
-        this.y = y;
-        this.s = s;
-        
-        g.fill(0);
-        g.ellipse(this.x,this.y,this.s);
-        g.fill(155);
-        if(this.connected)
-            g.fill(255,255,0);
-        g.ellipse(this.x,this.y,this.s*0.8);
-    }
-}
-
-
-function Wire(a,b){
-    
-    this.a = a;
-    this.b = b;
-    
     this.update = function(){
         
-        this.b.state = this.a.state;
+        if(this.mode=="and"){
+            
+            out = true;
+            
+            for(p=0;p<this.iNum&&out;p++)
+                if(!this.inputs[p].state)
+                    out = false;
+            
+            for(p=0;p<this.oNum;p++)
+                this.outputs[p].state = out;
+        }
+        else if(this.mode=="or"){
+            
+            out = false;
+            
+            for(p=0;p<this.iNum&&!out;p++)
+                if(this.inputs[p].state)
+                    out = true;
+            
+            for(p=0;p<this.oNum;p++)
+                this.outputs[p].state = out;
+        }
+        else if(this.mode=="not"){
+            
+            for(p=0;p<this.iNum&&p<this.oNum;p++)
+                this.outputs[p].state = !this.inputs[p].state
+        }
+        else{
+            ttIndex = 0;
+            for(p=0;p<this.iNum;p++)
+                if(this.inputs[p].state)
+                    ttIndex += pow(2,p);
+            
+            if(ttIndex < this.truthTable.length)
+            for(p=0;p<this.oNum&&p<this.truthTable[ttIndex].length;p++)
+                this.outputs[p].state = this.truthTable[ttIndex][p];
+            
+            
+        }
+        
+        for(p=0;p<this.iNum;p++){
+            
+            this.inputs[p].update();
+        }
+        
+        for(p=0;p<this.oNum;p++){
+            
+            this.outputs[p].update();
+        }
+        
     }
-    
+        
     this.draw = function(){
         
-        stroke(a.state*255,0,0);
+        let h = min(this.h/this.iNum,this.h/this.oNum);
+        
+        for(p=0;p<this.iNum;p++){
+            
+            this.inputs[p].draw(this.x-this.w/2-h/2,this.y-this.h/2+h/2+h*p,h,h);
+        }
+        
+        for(p=0;p<this.oNum;p++){
+            
+            this.outputs[p].draw(this.x+this.w/2+h/2,this.y-this.h/2+h/2+h*p,h,h);
+        }
+        
+        fill(this.c);
+        rect(this.x-this.w/2,this.y-this.h/2,this.w,this.h,this.w/10);
+        
+        
+    }
+}
+
+function Pin(mode){
+    
+    this.mode = mode;
+    
+    this.x = 0;
+    this.y = 0;
+    this.w = 0;
+    this.h = 0;
+    
+    this.state = 0;
+    this.connected = 0;
+    
+    this.update = function(){
+        if(cursorMode==1 && mouseIsPressed &&
+           mouseX >= this.x-this.w/2 && mouseX <= this.x+this.w/2 &&
+           mouseY >= this.y-this.w/2 && mouseY <= this.y+this.w/2){
+                        
+            if(wireToAdd!=null && this.mode==0 && !this.connected)
+                addNewWire(this);
+            else if(wireToAdd==null && this.mode==1)
+                addNewWire(this);
+            
+            this.connected = true
+        }
+    }
+    
+    this.draw = function(x,y,w,h){
+        
+        this.x = x;
+        this.y = y;
+        this.w = w;
+        this.h = h;
+        
+        stroke(this.state*255);
+        strokeWeight(this.h/10);
+        fill(100);
+        rect(this.x-this.w/2,this.y-this.h/2,this.w,this.h,this.h/8);
+        noStroke();
+    }
+}
+
+function Wire(a){
+    
+    this.a = a;
+    this.b = null;
+        
+    this.show = function(){
+        
+        stroke(255*this.a.state);
         
         if(this.b != null){
             
             strokeWeight(5);
             line(this.a.x,this.a.y,this.b.x,this.b.y);
+            
+            this.b.state = this.a.state;
         }
         else{
-            
-            strokeWeight(11);
+
+            strokeWeight(10);
             line(this.a.x,this.a.y,mouseX,mouseY);
         }
         
         noStroke();
     }
 }
-
-function Light(h){
+function addNewWire(connect){
     
-    this.x = width-345;
-    this.y = height * h;
-    this.s = 80;
-    
-    this.state = 0;
-    
-    this.connected = false;
-    
-    this.show = function(){
-        
-        if(!this.connected)
-            this.state = 0;
-        
-        if(!this.connected && cursorMode == 1 && creatingWire &&
-           mouseIsPressed && frameCount-lastPressed > 10 &&
-           mouseX >= this.x-this.s/2 && mouseX <= this.x + this.s/2 &&
-           mouseY >= this.y-this.s/2 && mouseY <= this.y + this.s/2){
-            
-            creatingWire.b = this;
-                                
-            wires.push(creatingWire);
-            
-            creatingWire = null;
-            
-            lastPressed = frameCount;
-            this.connected = true;
-        }
-        
-        fill(23);
-        rect(this.x-this.s/2,this.y-this.s/2,this.s,this.s,10);
-        
-        s = this.s * 0.8;
-        
-        if(this.state)
-            fill(255,255,51);
-        else
-            fill(100);
-        rect(this.x-s/2,this.y-s/2,s,s);
+    if(wireToAdd == null){
+        wireToAdd = new Wire(connect);
+    }
+    else{
+        wireToAdd.b = connect;
+        wires.push(wireToAdd);
+        wireToAdd = null;
     }
 }
 
 
-function Button(h){
+
+function Light(h){
     
-    this.x = 50;
-    this.y = height * h;
-    this.s = 80;
+    this.x = simWidth-80;
+    this.y = height*map(h,0,1,0.05,0.95);
+    this.w = min(height*0.9/outputNum,80);
     
     this.state = 0;
+    
+    this.strength = 0;
+    
+    this.connected = false;
         
     this.show = function(){
         
         fill(0);
-        ellipse(this.x,this.y,this.s);
+        rect(this.x-this.w/2,this.y-this.w/2,this.w,this.w,this.w/10);
         
-        fill(!this.state*255,this.state*255,0);
-        ellipse(this.x,this.y,this.s*0.8);
+        w = this.w*7/8;
+        fill(20+this.strength*235,20+this.strength*235,20*(1-this.strength));
+        rect(this.x-w/2,this.y-w/2,w,w,this.w/10);
         
-        if(mouseIsPressed && frameCount-lastPressed > 10 &&
-           dist(mouseX,mouseY,this.x,this.y) < this.s/2){
+        if(this.strength != this.state){
             
-            if(cursorMode == 0)
-                this.state = !this.state;
-            else if(cursorMode == 1 && !creatingWire){
-                    
-                creatingWire = new Wire(this,null);
-            }
+            this.strength += (this.state-this.strength)/5;
+        }
+        
+        if(mouseIsPressed && !this.connected && cursorMode == 1 &&
+           wireToAdd != null &&
+           mouseX >= this.x-this.w/2 && mouseX <= this.x+this.w/2 &&
+           mouseY >= this.y-this.w/2 && mouseY <= this.y+this.w/2){
             
-            lastPressed = frameCount;
+            this.connected = true;
+            addNewWire(this);
         }
         
     }
-    
-    
 }
 
-
-function connectNode(x,y){
+function Switch(h){
+    
+    this.x = 100;
+    this.y = height*map(h,0,1,0.05,0.95);
+    this.w = min((height*0.9)/inputNum,100);
+    this.h = this.w/2;
+    
     this.state = 0;
-    this.x = x;
-    this.y = y;
+    
+    this.slidePos = 0;
+    
+    this.lastPressed = 0;
+    
+    this.show = function(){
+        
+        this.update();
+        
+        fill(0);
+        rect(this.x-this.w/2,this.y-this.h/2,this.w,this.h,this.h/5);
+        
+        stroke(0);
+        strokeWeight(this.w/20);
+        fill((1-this.slidePos)*255,this.slidePos*255,0);
+        rect(this.x-this.w/2+(this.slidePos*this.w/2),
+             this.y-this.h/2,this.w/2,this.h,this.h/5);
+        noStroke();
+    }
+    
+    this.update = function(){
+        
+        if(mouseIsPressed && frameCount - this.lastPressed > 10 &&
+           mouseX >= this.x-this.w/2 && mouseX <= this.x+this.w/2 &&
+           mouseY >= this.y-this.h/2 && mouseY <= this.y+this.h/2){
+            
+            if(cursorMode==0){
+                
+                this.state = !this.state;
+            }
+            else if(cursorMode==1 && wireToAdd==null){
+                
+                addNewWire(this);
+            }
+            this.lastPressed = frameCount;
+        }
+        
+        if(this.slidePos-this.state>0.01){
+            
+            this.slidePos -= 0.1;
+        }
+        if(this.slidePos-this.state<-0.01){
+            
+            this.slidePos += 0.1;
+        }
+            
+    }
+}
+
+function IOSizeController(){
+    
+    this.x = simWidth/2;
+    this.y = 0;
+    this.w = 400;
+    this.h = 50;
+    
+    this.lastPressed = 0;
+    
+    this.buttons = [0,0,0,0];
+    this.buttonLevels = [0,0,0,0];
+    
+    this.show = function(){
+                
+        fill(0);
+        rect(this.x-this.w/2,this.y,this.w,this.h);
+        
+        fill(100);
+        textAlign(CENTER,TOP);
+        textSize(30);
+        text("Wesley Goyette",this.x,this.y+10);
+        
+        
+        stroke(0);
+        fill(0,255,0);
+        rect(this.x-this.w/2,this.y,this.h-this.buttonLevels[0],this.h/2,this.h/8);
+        this.checkRect(this.x-this.w/2,this.y,this.h,this.h/2,0);
+        rect(this.x+this.w/2-this.h,this.y,this.h,this.h/2,this.h/8);
+        this.checkRect(this.x+this.w/2-this.h,this.y,this.h,this.h/2,1);
+        
+        fill(255,0,0);
+        rect(this.x-this.w/2,this.y+this.h/2,this.h,this.h/2,this.h/8);
+        this.checkRect(this.x-this.w/2,this.y+this.h/2,this.h,this.h/2,2);
+        rect(this.x+this.w/2-this.h,this.y+this.h/2,this.h,this.h/2,this.h/8);
+        this.checkRect(this.x+this.w/2-this.h,this.y+this.h/2,this.h,this.h/2,3);
+        noStroke();
+        
+        fill(100);
+        rect(this.x-this.w/2-this.h,this.y,this.h,this.h,this.h/14);
+        rect(this.x+this.w/2,this.y,this.h,this.h,this.h/14);
+        
+        fill(200);
+        stroke(100);
+        strokeWeight(2);
+        textAlign(CENTER,TOP);
+        textSize(40);
+        text(inputNum,this.x-this.w/2-this.h/2,this.y+6);
+        text(outputNum,this.x+this.w/2+this.h/2,this.y+6);
+        noStroke();
+        
+        
+        
+    }
+    
+    this.checkRect = function(x,y,w,h,mode){
+        
+        if(mouseIsPressed &&
+           mouseX >= x && mouseX < x+w &&
+           mouseY >= y && mouseY < y+h){
+            
+            if(frameCount - this.lastPressed > 10){
+                
+                if(mode==0){
+                    
+                    inputNum++;
+                    if(inputNum > 32)
+                        inputNum = 32;
+                }
+                else if(mode==2){
+                    
+                    inputNum--;
+                    if(inputNum < 1)
+                        inputNum = 1;
+                }
+                else if(mode==1){
+                    
+                    outputNum++;
+                    if(outputNum > 32)
+                        outputNum = 32;
+                }
+                else if(mode==3){
+                    
+                    outputNum--;
+                    if(outputNum < 1)
+                        outputNum = 1;
+                }
+                
+                this.lastPressed = frameCount;
+            }
+            else{
+                
+                this.buttons[mode]+=1;
+                
+            }
+        }
+    }
+}
+
+function ChipController(){
+    
+    this.x = simWidth;
+    this.y = 0;
+    this.w = width-simWidth;
+    this.h = height;
+    
+    this.cells = [new Chip("and",2,1),
+                  new Chip("or" ,2,1),
+                  new Chip("not",1,1),
+                  new Register()];
+    
+    this.lastPressed = 0;
+    
+    
+    this.show = function(){
+        
+        fill(23);
+        rect(this.x,this.y,this.w,this.h);
+        
+        gridWidth = 3;
+        bs = this.w/gridWidth;
+        
+        c = 0;
+        y = 0;
+        while(c<=this.cells.length){
+            
+            for(x=0;x<gridWidth&&c<=this.cells.length;x++){
+                
+                padd = 5;
+                
+                fill(100);
+                rect(this.x+bs*x+padd/2,this.y+bs*y+padd/2,bs-padd,bs-padd,bs/20);
+                
+                if(c < this.cells.length){
+                    
+                    fill(255);
+                    textAlign(CENTER,TOP);
+                    textSize(20);
+                    text(this.cells[c].mode,this.x+bs*x+bs/2,this.y+bs*y+5);
+                    this.cells[c].x = 0;
+                    this.cells[c].y = 0;
+                    scl = min((bs/2)/this.cells[c].h,1);
+                    translate(this.x+bs*x+bs/2,this.y+bs*y+bs/2+10);
+                    scale(scl);
+                    this.cells[c].draw();
+                    scale(1/scl);
+                    translate(-(this.x+bs*x+bs/2),-(this.y+bs*y+bs/2+10));
+                }
+                else{
+                    fill(255);
+                    textAlign(CENTER,CENTER);
+                    textSize(30);
+                    text("+",this.x+bs*x+bs/2,this.y+bs*y+bs/2);
+                }
+                
+                if(mouseIsPressed && frameCount - this.lastPressed > 30 &&
+                   mouseX >= this.x+bs*x+padd/2 && mouseX < this.x+bs*x-padd/2+bs &&
+                   mouseY >= this.y+bs*y+padd/2 && mouseY < this.y+bs*y-padd/2+bs){
+                    
+                    if(c==this.cells.length){
+                        cta = new Chip("custom",inputSwitches.length,outputSwitches.length);
+                        
+                        for(b=0;b<inputSwitches.length;b++)
+                            inputSwitches[b].state = 0;
+                                                
+                        for(pee=0;pee<pow(2,cta.iNum);pee++){
+                            
+                            decimal = pee;
+                            binary = [];
+                            while (decimal > 0) {
+                                if (decimal & 1) {
+                                    binary.push(1);
+                                } else {
+                                    binary.push(0);
+                                }
+                                decimal = decimal >> 1;
+                            }
+                            for(b=0;b<binary.length;b++){
+                                
+                                inputSwitches[b].state = binary[b];
+                            }
+                            
+                            //update circuitry
+                            for(poo=0;poo<20;poo++){
+                                for(b=0;b<wires.length;b++){
+                                    
+                                    wires[b].show();
+                                }
+                                for(r=0;r<circuitry.length;r++){
+                                    
+                                    circuitry[r].show();
+                                }
+                            }
+                            
+                            cta.truthTable[pee] = [];
+                            
+                            for(b=0;b<outputSwitches.length;b++){
+                                
+                                cta.truthTable[pee][b] = outputSwitches[b].state;
+                            }
+                        }
+                        
+                        console.log(cta.truthTable);
+                        
+                        for(b=0;b<inputSwitches.length;b++)
+                            inputSwitches[b].state = 0;
+                        
+                        wires = [];
+                        circuitry = [];
+                        
+                        for(b=0;b<outputSwitches.length;b++)
+                            outputSwitches[b].connected = 0;
+                        for(b=0;b<outputSwitches.length;b++)
+                            outputSwitches[b].state = 0;
+                        
+                        this.cells.push(cta);
+                    }
+                    else{
+                        
+                        cursorMode = 2;
+                        wireToAdd = null;
+                        
+                        if(c!=3){
+                            chipToAdd = {...this.cells[c]};
+                            chipToAdd.inputs = [];
+                            chipToAdd.outputs = [];
+                            for(p=0;p<chipToAdd.iNum;p++)
+                                chipToAdd.inputs[p] = new Pin(0);
+                            for(p=0;p<chipToAdd.oNum;p++)
+                                chipToAdd.outputs[p] = new Pin(1);
+                        }
+                        else{ //register
+                            chipToAdd = {...this.cells[c]};
+                            chipToAdd.memory = Array(chipToAdd.memSize).fill(0);;
+                            chipToAdd.inputs = [];
+                            chipToAdd.outputs = [];
+                            for(p=0;p<chipToAdd.memSize+2;p++)
+                                chipToAdd.inputs[p] = new Pin(0);
+                            for(p=0;p<chipToAdd.memSize;p++)
+                                chipToAdd.outputs[p] = new Pin(1);
+                        }
+                        
+                        
+                    }
+                    
+                    this.lastPressed = frameCount;
+                }
+                
+                c++;
+            }
+            y++;
+        }
+        
+    }
 }
