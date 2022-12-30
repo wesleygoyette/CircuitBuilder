@@ -9,29 +9,16 @@ function setup(){
 
 function draw(){
 
-    if(mouseIsPressed && frameCount-lastPressed > 1 && mouseX != 0 && mouseY != 0){
-
-        if(lx==0&&ly==0){
-
-            lx = mouseX;
-            ly = mouseY;
-        }
-        else{
-
-            stroke(255);
-            strokeWeight(10);
-            line(lx,ly,mouseX,mouseY);
-            noStroke();
-        }
+    if(mouseIsPressed && lx != 0 && ly != 0){
 
 
-        
-
-        lastPressed = frameCount;
-
-        lx = mouseX;
-        ly = mouseY;
+        stroke(255);
+        strokeWeight(10);
+        line(lx,ly,mouseX,mouseY);
+        noStroke();
     }
+    lx = mouseX;
+    ly = mouseY;
 
     
 }
