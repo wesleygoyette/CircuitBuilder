@@ -51,7 +51,6 @@ function draw(){
         outputSwitches[i].show();
     
     ioController.show();
-    
     addChipController.show();
     
     
