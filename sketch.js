@@ -2,23 +2,29 @@ function setup(){
     createCanvas(windowWidth, windowHeight);
     noStroke()
     background(23);
-    lx = 0;
-    ly = 0;
-    lastPressed = 0;
+
+    itemsToDraw = [];
 }
 
 function draw(){
+    background(23);
 
-    if(mouseIsPressed && lx != 0 && ly != 0){
+    itemsToDraw = [];
+    for(i=0;i<itemsToDraw.length;i++)
+        itemsToDraw[i].draw();
+}
 
+function Chip(){
 
-        stroke(255);
-        strokeWeight(10);
-        line(lx,ly,mouseX,mouseY);
-        noStroke();
+    this.x = width/2;
+    this.y = height/2;
+    this.w = 100;
+    this.h = 50;
+
+    this.show = function(){
+
+        fill(255);
+
     }
-    lx = mouseX;
-    ly = mouseY;
 
-    
 }
